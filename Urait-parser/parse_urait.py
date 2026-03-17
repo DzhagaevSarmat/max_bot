@@ -364,6 +364,7 @@ def main() -> int:
 
     print(msg)
 
+    # (!) Если нужно делать проверку после каждого запуска, то нужно закомментировать нижнюю строчку
     if total_done_after >= total_pages:
         ans = input("Убрать дубликаты в vo_all.rumarc? (y/n): ").strip().lower()
         if ans in ("y", "yes", "д", "да"):
