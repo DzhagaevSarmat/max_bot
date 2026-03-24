@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaTeX Bib Checker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📚 LaTeX Bib Checker</h1>
+        <p>Проверка ссылок в LaTeX документах</p>
+    </div>
+
+    <div class="content">
+        <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
+            <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                <input type="file" name="file" id="file-input" accept=".tex">
+                <div class="upload-label">📂 Выбрать .tex файл</div>
+                <div class="file-name" id="file-name">Файл не выбран</div>
+            </div>
+            <div style="text-align: center;">
+                <button type="submit">🔍 Проверить</button>
+            </div>
+        </form>
+
+        {% if error %}
+        <div class="error">
+            <strong>❌ Ошибка:</strong> {{ error }}
+        </div>
+        {% endif %}
+
+        {% if result %}
+        <div class="result">
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value">{{ result.total_cites }}</div>
+                    <div class="metric-label">📝 Ссылок в тексте</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ result.total_bibs }}</div>
+                    <div class="metric-label">📚 Записей в библиографии</div>
+                </div>
+            </div>
+
+            <!-- Проверка 1: записи в библиографии без ссылок -->
+            {% if result.unused %}
+            <div class="warning">
+                <strong>⚠️ Найдено {{ result.unused|length }} записей без ссылок (есть в библиографии, нет в тексте):</strong>
+                <div class="bib-list">
+                    {% for bib in result.unused %}
+                    <div class="bib-item">{{ loop.index }}. <code>{{ bib }}</code></div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Проверка 2: ссылки в тексте без записей в библиографии -->
+            {% if result.missing %}
+            <div class="error">
+                <strong>❌ Найдено {{ result.missing|length }} ссылок без записей (есть в тексте, нет в библиографии):</strong>
+                <div class="bib-list">
+                    {% for cite in result.missing %}
+                    <div class="bib-item">{{ loop.index }}. <code>{{ cite }}</code></div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Если всё в порядке -->
+            {% if not result.unused and not result.missing %}
+            <div class="success">
+                <strong>✅ Все в порядке! Каждая ссылка имеет запись в библиографии, и каждая запись используется!</strong>
+            </div>
+            {% endif %}
+
+            <details>
+                <summary>🔍 Показать все ссылки в тексте ({{ result.total_cites }})</summary>
+                <div class="bib-list">
+                    {% if result.all_cites %}
+                    {{ result.all_cites|join(', ') }}
+                    {% else %}
+                    Нет ссылок
+                    {% endif %}
+                </div>
+            </details>
+
+            <details>
+                <summary>📚 Показать все записи в библиографии ({{ result.total_bibs }})</summary>
+                <div class="bib-list">
+                    {% if result.all_bibs %}
+                    {{ result.all_bibs|join(', ') }}
+                    {% else %}
+                    Нет записей
+                    {% endif %}
+                </div>
+            </details>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <p>Поддерживает: \cite{key}, \cite[опция]{key}, \bibitem{key}, \RBibitem{key}</p>
+        <p>Автоматическое определение кодировки: cp1251, UTF-8, windows-1251, koi8-r</p>
+        <p>🔍 Проверка в обе стороны: лишние записи в библиографии + отсутствующие записи в библиографии</p>
+    </div>
+</div>
+
+<script>
+    // показываем имя выбранного файла
+    document.getElementById('file-input').addEventListener('change', function(e) {
+        const fileName = e.target.files[0] ? e.target.files[0].name : 'Файл не выбран';
+        document.getElementById('file-name').textContent = fileName;
+    });
+
+    // анимация при загрузке
+    document.getElementById('upload-form').addEventListener('submit', function() {
+        const button = this.querySelector('button');
+        button.textContent = '⏳ Обработка...';
+        button.disabled = true;
+    });
+</script>
+</body>
+</html>
